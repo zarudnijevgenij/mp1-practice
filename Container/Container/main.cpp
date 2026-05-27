@@ -12,7 +12,7 @@ int main() {
         int* a1 = new int(1);
         int* a2 = new int(2);
         int* a3 = new int(3);
-
+         
         container<int*> b1(1, step);
         b1.push(a2);
         b1.push(a1);

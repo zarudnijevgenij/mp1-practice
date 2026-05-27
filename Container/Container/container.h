@@ -11,18 +11,7 @@ private:
     size_t size, capacity, step;
     T* elem;
     void reallocate();
-
-    friend std::ostream& operator<<(std::ostream& out, const container<T>& b) {
-        out << "size = " << b.size << " | capacity = " << b.capacity << " | step = " << b.step << "\n[";
-        for (size_t i = 0; i < b.size; i++) {
-            out << b.elem[i];
-            if (i + 1 < b.size) out << ", ";
-        }
-        out << "]";
-        return out;
-    }
 public:
-
     container(size_t cp = 10, size_t st = 5);
     container(size_t cp, size_t st, const T& el);
     container(const container<T>& other);
@@ -32,7 +21,7 @@ public:
 
     T& operator[](size_t index);
     const T& operator[](size_t index) const;
-    container<T>& operator=(const container<T>& other);
+    const container<T>& operator=(const container<T>& other);
     container<T>& operator=(container<T>&& other) noexcept;
     
  
@@ -47,7 +36,15 @@ public:
     size_t getCapacity() const { return capacity; }
     bool isEmpty() const { return size == 0; }
     
-
+    friend std::ostream& operator<<(std::ostream& out, const container<T>& b) {
+      out << "size = " << b.size << " | capacity = " << b.capacity << " | step = " << b.step << "\n[";
+      for (size_t i = 0; i < b.size; i++) {
+        out << b.elem[i];
+        if (i + 1 < b.size) out << ", ";
+      }
+      out << "]";
+      return out;
+    };
 };
 
 
@@ -106,20 +103,22 @@ const T& container<T>::operator[](size_t index) const {
 }
 
 template<typename T>
-container<T>& container<T>::operator=(const container<T>& other) {
+const container<T>& container<T>::operator=(const container<T>& other) {
     if (this == &other) return *this;
     
-    delete[] elem;
-    
-    size = other.size;
-    capacity = other.capacity;
-    step = other.step;
-    elem = new T[capacity]();
-    
-    for (size_t i = 0; i < size; i++) {
+    if (this->capacity != other.capacity) {
+      delete[] elem;
+
+      size = other.size;
+      capacity = other.capacity;
+      step = other.step;
+      elem = new T[capacity]();
+
+      for (size_t i = 0; i < size; i++) {
         elem[i] = other.elem[i];
+      }
+      return *this;
     }
-    return *this;
 }
 
 template<typename T>
@@ -145,7 +144,7 @@ void container<T>::reallocate() {
     size_t new_capacity = capacity + step;
     T* buff = new T[new_capacity]();
     for (size_t i = 0; i < size; i++) {
-        buff[i] = std::move(elem[i]);
+        buff[i] = elem[i];
     }
     delete[] elem;
     elem = buff;
@@ -166,21 +165,21 @@ void container<T>::push(const T& el) {
     elem[size++] = el;
 }
 
-template<typename T>
-void container<T>::push(T&& el) {
-    if (size == capacity) reallocate();
-    elem[size++] = std::move(el);
-}
+//template<typename T>
+//void container<T>::push(T&& el) { //?
+//    if (size == capacity) reallocate();
+//    elem[size++] = std::move(el);
+//}
 
 template<typename T>
 void container<T>::remove(const T& el) {
     int pos = find(el);
     if (pos == -1) throw std::runtime_error("Element not found");
-    elem[pos] = std::move(elem[--size]);
+    elem[pos] = elem[--size];
 }
 
 template<typename T>
-void container<T>::remove(T&& el) {
+void container<T>::remove(T&& el) { //?
     int pos = find(el);
     if (pos == -1) throw std::runtime_error("Element not found");
     elem[pos] = std::move(elem[--size]);
@@ -194,6 +193,26 @@ private:
     size_t size, capacity, step;
     T** elem;
     void reallocate();
+
+public:
+    container(size_t cp = 10, size_t st = 5);
+    container(size_t cp, size_t st, T*& el);
+    container(const container<T*>& other);
+    container(container<T*>&& other) noexcept;
+    ~container();
+    
+    T*& operator[](size_t index);
+    const T*& operator[](size_t index) const;
+    const container<T*>& operator=(const container<T*>& other);
+    container<T*>& operator=(container<T*>&& other) noexcept;
+    
+    int find(const T* el) const; 
+    void push(T* el);              
+    void remove(const T* el);      
+    
+    size_t getSize() const { return size; }
+    size_t getCapacity() const { return capacity; }
+    bool isEmpty() const { return size == 0; }
     friend std::ostream& operator<<(std::ostream& out, const container<T*>& b) {
         out << "size = " << b.size << " | capacity = " << b.capacity << " | step = " << b.step << "\n____________\n";
         for (size_t i = 0; i < b.size; i++) {
@@ -204,26 +223,6 @@ private:
         out << "____________";
         return out;
     }
-public:
-    container(size_t cp = 10, size_t st = 5);
-    container(size_t cp, size_t st, T*& el);
-    container(const container<T*>& other);
-    container(container<T*>&& other) noexcept;
-    ~container();
-    
-    T*& operator[](size_t index);
-    const T*& operator[](size_t index) const;
-    container<T*>& operator=(const container<T*>& other);
-    container<T*>& operator=(container<T*>&& other) noexcept;
-    
-    int find(const T* el) const; 
-    void push(T* el);              
-    void remove(const T* el);      
-    
-    size_t getSize() const { return size; }
-    size_t getCapacity() const { return capacity; }
-    bool isEmpty() const { return size == 0; }
-
 };
 
 
@@ -282,7 +281,7 @@ const T*& container<T*>::operator[](size_t index) const {
 }
 
 template<typename T>
-container<T*>& container<T*>::operator=(const container<T*>& other) {
+const container<T*>& container<T*>::operator=(const container<T*>& other) {
     if (this == &other) return *this;
     
     for (size_t i = 0; i < size; i++) delete elem[i];
